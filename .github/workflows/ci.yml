@@ -30,7 +30,7 @@ jobs:
         set -eo pipefail
         python3.9 -m pytest tests/test_accuracy.py --log-cli-level=INFO
       env:
-        OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
         COLLECTION_NAME: ${{ vars.COLLECTION_NAME }}
         RUN_ACCURACY_TEST: ${{ vars.RUN_ACCURACY_TEST }}

@@ -1,0 +1,44 @@
+name: Accuracy Check CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  accuracy-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        python3.9 -m pip install --upgrade pip setuptools wheel pyopenssl pytest
+        python3.9 -m pip install --no-cache-dir -r requirements.txt
+
+    - name: Run Accuracy Test
+      run: |
+        export PYTHONPATH="$(pwd)/docs-assistant-bot:$PYTHONPATH"
+        set -eo pipefail
+        python3.9 -m pytest tests/test_accuracy.py --log-cli-level=INFO
+      env:
+        OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+        COLLECTION_NAME: ${{ vars.COLLECTION_NAME }}
+        RUN_ACCURACY_TEST: ${{ vars.RUN_ACCURACY_TEST }}
+        ZILLIZ_CLOUD_API_KEY: ${{ secrets.ZILLIZ_CLOUD_API_KEY }}
+        ZILLIZ_CLOUD_URI: ${{ vars.ZILLIZ_CLOUD_URI }}
+
+    - name: Publish Accuracy Test Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: AccuracyTestResults
+        path: 'test_data/accuracy_results.csv'

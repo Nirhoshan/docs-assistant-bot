@@ -16,19 +16,19 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
         sudo apt update
-        python3.9 -m pip install --upgrade pip setuptools wheel pyopenssl pytest
-        python3.9 -m pip install --no-cache-dir -r requirements.txt
+        python3.11 -m pip install --upgrade pip setuptools wheel pyopenssl pytest
+        python3.11 -m pip install --no-cache-dir -r requirements.txt
 
     - name: Run Accuracy Test
       run: |
         export PYTHONPATH="$(pwd)/docs-assistant-bot:$PYTHONPATH"
         set -eo pipefail
-        python3.9 -m pytest tests/test_accuracy.py --log-cli-level=INFO
+        python3.11 -m pytest tests/test_accuracy.py --log-cli-level=INFO
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}

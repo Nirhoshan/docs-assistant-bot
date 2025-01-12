@@ -49,7 +49,6 @@ async def process_questions(questions):
 
 class AccuracyTest(unittest.TestCase):
 
-    @unittest.skipUnless(os.getenv('RUN_ACCURACY_TEST', 'False') == 'True', "Accuracy tests are skipped")
     def test_metrics_thresholds(self):
         llm = ChatOpenAI(model="gpt-4-turbo-2024-04-09", temperature=1e-8)
         embeddings = OpenAIEmbeddings(model="text-embedding-3-small")

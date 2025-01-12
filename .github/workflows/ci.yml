@@ -33,7 +33,6 @@ jobs:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
         COLLECTION_NAME: ${{ vars.COLLECTION_NAME }}
-        RUN_ACCURACY_TEST: ${{ vars.RUN_ACCURACY_TEST }}
         ZILLIZ_CLOUD_API_KEY: ${{ secrets.ZILLIZ_CLOUD_API_KEY }}
         ZILLIZ_CLOUD_URI: ${{ vars.ZILLIZ_CLOUD_URI }}
 

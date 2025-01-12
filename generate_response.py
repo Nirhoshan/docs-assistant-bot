@@ -10,7 +10,6 @@ from fastapi.logger import logger
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_milvus import Milvus
-from langchain.schema import HumanMessage
 
 
 @asynccontextmanager
@@ -105,7 +104,6 @@ async def bulk_response(question):
     llm = app.state.llm
     system_prompt = app.state.system_prompt
     message = await get_chat_prompt(question)
-    # print(message)
     try:
         response = await llm.ainvoke([
             {"role": "system", "content": system_prompt},

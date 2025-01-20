@@ -1,14 +1,11 @@
-import os
 import csv
 import logging
 import unittest
-import asyncio
 from datasets import Dataset
 from ragas import evaluate
 from ragas.metrics import context_recall, context_precision, faithfulness, answer_similarity
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from generate_response import app, lifespan, bulk_response, get_docs
-
+from generate_response import get_docs, bulk_response
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,19 +24,13 @@ def load_data(filepath):
     return questions, ground_truths
 
 
-async def initialize_app_state():
-    async with lifespan(app):
-        pass
-
-
-async def process_questions(questions):
-    await initialize_app_state()
+def process_questions(questions):
     answers, contexts = [], []
     for question in questions:
         logger.info(question)
-        answer = await bulk_response(question)
+        answer = bulk_response(question)
         logger.info(answer)
-        docs = await get_docs(question)
+        docs = get_docs(question)
         context = [(f"doc: {doc.page_content}. You can refer to this [document] "
                     f"({doc.metadata['ChoreoMetadata']['doc_link']}) for more details.") for doc in docs]
         answers.append(answer)
@@ -53,7 +44,8 @@ class AccuracyTest(unittest.TestCase):
         llm = ChatOpenAI(model="gpt-4-turbo-2024-04-09", temperature=1e-8)
         embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
         questions, ground_truths = load_data('test_data/validation_dataset.csv')
-        questions, answers, contexts = asyncio.run(process_questions(questions))
+        questions, answers, contexts = process_questions(questions)
+
         data = {
             "question": questions,
             "answer": answers,
@@ -73,18 +65,27 @@ class AccuracyTest(unittest.TestCase):
             embeddings=embeddings,
             raise_exceptions=False
         ).to_pandas()
+
         results.to_csv('test_data/accuracy_results.csv', index=False)
         metric_columns = ['context_precision', 'context_recall', 'faithfulness', 'answer_similarity']
         metric_scores = results[metric_columns]
         mean_scores = metric_scores.mean()
-        thresholds = {'context_precision': 0.95, 'context_recall': 0.90, 'faithfulness': 0.90,
-                      'answer_similarity': 0.90}
+
+        thresholds = {
+            'context_precision': 0.95,
+            'context_recall': 0.90,
+            'faithfulness': 0.90,
+            'answer_similarity': 0.90
+        }
+
         for metric, threshold in thresholds.items():
             with self.subTest(metric=metric):
                 logger.info(f"{metric} average of {mean_scores[metric]:.2f} meets the threshold of {threshold}.")
-                self.assertGreaterEqual(mean_scores[metric], threshold,
-                                        f"{metric} average of {mean_scores[metric]:.2f} is below the threshold"
-                                        f"of {threshold}.")
+                self.assertGreaterEqual(
+                    mean_scores[metric],
+                    threshold,
+                    f"{metric} average of {mean_scores[metric]:.2f} is below the threshold of {threshold}."
+                )
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import csv
 import logging
-import unittest
+import sys
 from datasets import Dataset
 from ragas import evaluate
 from ragas.metrics import context_recall, context_precision, faithfulness, answer_similarity
@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 httpx_logger = logging.getLogger("httpx")
 httpx_logger.setLevel(logging.WARNING)
 
-
 def load_data(filepath):
     questions, ground_truths = [], []
     with open(filepath, newline='') as csvfile:
@@ -23,13 +22,10 @@ def load_data(filepath):
             ground_truths.append([row[1]])
     return questions, ground_truths
 
-
 def process_questions(questions):
     answers, contexts = [], []
     for question in questions:
-        logger.info(question)
         answer = bulk_response(question)
-        logger.info(answer)
         docs = get_docs(question)
         context = [(f"doc: {doc.page_content}. You can refer to this [document] "
                     f"({doc.metadata['ChoreoMetadata']['doc_link']}) for more details.") for doc in docs]
@@ -37,56 +33,67 @@ def process_questions(questions):
         contexts.append(context)
     return questions, answers, contexts
 
+def main():
+    # Initialize LLM and embeddings
+    llm = ChatOpenAI(model="gpt-4-turbo-2024-04-09", temperature=1e-8)
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
-class AccuracyTest(unittest.TestCase):
+    # Load and process data
+    questions, ground_truths = load_data('test_data/validation_dataset.csv')
+    questions, answers, contexts = process_questions(questions)
 
-    def test_metrics_thresholds(self):
-        llm = ChatOpenAI(model="gpt-4-turbo-2024-04-09", temperature=1e-8)
-        embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-        questions, ground_truths = load_data('test_data/validation_dataset.csv')
-        questions, answers, contexts = process_questions(questions)
+    # Prepare dataset
+    data = {
+        "question": questions,
+        "answer": answers,
+        "contexts": contexts,
+        "ground_truths": ground_truths
+    }
+    dataset = Dataset.from_dict(data)
 
-        data = {
-            "question": questions,
-            "answer": answers,
-            "contexts": contexts,
-            "ground_truths": ground_truths
-        }
-        dataset = Dataset.from_dict(data)
-        results = evaluate(
-            dataset=dataset,
-            metrics=[
-                context_precision,
-                context_recall,
-                faithfulness,
-                answer_similarity,
-            ],
-            llm=llm,
-            embeddings=embeddings,
-            raise_exceptions=False
-        ).to_pandas()
+    # Run evaluation
+    results = evaluate(
+        dataset=dataset,
+        metrics=[
+            context_precision,
+            context_recall,
+            faithfulness,
+            answer_similarity,
+        ],
+        llm=llm,
+        embeddings=embeddings,
+        raise_exceptions=False
+    ).to_pandas()
 
-        results.to_csv('test_data/accuracy_results.csv', index=False)
-        metric_columns = ['context_precision', 'context_recall', 'faithfulness', 'answer_similarity']
-        metric_scores = results[metric_columns]
-        mean_scores = metric_scores.mean()
+    # Save results
+    results.to_csv('test_data/accuracy_results.csv', index=False)
 
-        thresholds = {
-            'context_precision': 0.95,
-            'context_recall': 0.90,
-            'faithfulness': 0.90,
-            'answer_similarity': 0.90
-        }
+    # Define thresholds
+    thresholds = {
+        'context_precision': 0.95,
+        'context_recall': 0.90,
+        'faithfulness': 0.90,
+        'answer_similarity': 0.90
+    }
 
-        for metric, threshold in thresholds.items():
-            with self.subTest(metric=metric):
-                logger.info(f"{metric} average of {mean_scores[metric]:.2f} meets the threshold of {threshold}.")
-                self.assertGreaterEqual(
-                    mean_scores[metric],
-                    threshold,
-                    f"{metric} average of {mean_scores[metric]:.2f} is below the threshold of {threshold}."
-                )
+    # Check metrics against thresholds
+    mean_scores = results[list(thresholds.keys())].mean()
+    failed_metrics = []
 
+    for metric, threshold in thresholds.items():
+        score = mean_scores[metric]
+        logger.info(f"{metric} average: {score:.2f} (threshold: {threshold})")
+        if score < threshold:
+            failed_metrics.append(f"{metric} ({score:.2f} < {threshold})")
+
+    # Exit with error if any metrics failed
+    if failed_metrics:
+        logger.error("Accuracy test failed for the following metrics:")
+        for metric in failed_metrics:
+            logger.error(f"- {metric}")
+        sys.exit(1)
+    else:
+        logger.info("All accuracy metrics passed!")
 
 if __name__ == "__main__":
-    unittest.main()
+    main()

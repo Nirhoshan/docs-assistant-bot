@@ -28,7 +28,7 @@ jobs:
       run: |
         export PYTHONPATH="$(pwd)/docs-assistant-bot:$PYTHONPATH"
         set -eo pipefail
-        python3.11 -m pytest tests/test_accuracy.py --log-cli-level=INFO
+        python3.11 tests/test_accuracy.pys
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}

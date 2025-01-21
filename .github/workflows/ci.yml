@@ -26,7 +26,6 @@ jobs:
 
     - name: Run Accuracy Test
       run: |
-        export PYTHONPATH="$(pwd):$PYTHONPATH"
         set -eo pipefail
         python3.11 tests/test_accuracy.pys
       env:

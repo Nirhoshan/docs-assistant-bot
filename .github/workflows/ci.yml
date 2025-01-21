@@ -26,8 +26,9 @@ jobs:
 
     - name: Run Accuracy Test
       run: |
+        export PYTHONPATH="$(pwd)/docs-assistant-bot:$PYTHONPATH"
         set -eo pipefail
-        python3.11 tests/test_accuracy.pys
+        python3.11 tests/test_accuracy.py
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}

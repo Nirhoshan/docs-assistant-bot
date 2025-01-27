@@ -50,7 +50,7 @@ def get_docs(question):
 def get_chat_prompt(question):
     cleaned_question = re.sub(r"in choreo", "", question, flags=re.IGNORECASE)
     results = get_docs(cleaned_question)
-    logging.INFO(results)
+    logging.info(results)
     chat_prompt = f"User's Question: {cleaned_question}\n\nInformation from docs:\n"
     for result in results:
         chat_prompt += f"Document: {{content: {result.page_content}, metadata:{result.metadata}}}\n"
@@ -63,7 +63,7 @@ def bulk_response(question):
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": message}
     ])
-    logging.INFO(response)
+    logging.info(response)
     return response.content
 
 

@@ -1,0 +1,56 @@
+openapi: 3.0.3
+info:
+  title: Docs Assistant
+  version: "0.1.0"
+  description: >
+    A Docs Assistant API to provide answers to questions about the Choreo product using contextual information 
+    from the provided documentation.
+servers:
+  - url: http://0.0.0.0:8080
+    description: Local development server
+paths:
+  /chat:
+    post:
+      summary: Get a response to a question about Choreo
+      description: >
+        Accepts a user's question and returns an answer based on contextual information from Choreo documentation.
+      operationId: chat
+      requestBody:
+        description: Question to be processed by the Docs Assistant.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                question:
+                  type: string
+                  example: "How do I set up an API in Choreo?"
+                  description: The question you want answered.
+              required:
+                - question
+      responses:
+        '200':
+          description: Successfully processed the question and returned an answer.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    description: The assistant's response to the question.
+                    example: "To set up an API in Choreo, you can..."
+        '400':
+          description: Invalid input.
+        '500':
+          description: Server error.
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message.
+          example: "An error occurred while processing your request."

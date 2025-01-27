@@ -1,6 +1,7 @@
 import uvicorn
 import os
 import re
+import logging
 from fastapi import FastAPI, Body
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_milvus import Milvus
@@ -43,14 +44,13 @@ doc_link metadata in the docs you are provided. Do not give fake links of your o
 refer the docs. Give a comprehensive answer to how to do it or what it is before you direct the user to the docs
 with the links. Don't include steps to sign in to choreo console. User is already in Choreo console while asking you this question."""
 
-
 def get_docs(question):
     return reranked_retriever.invoke(question)
-
 
 def get_chat_prompt(question):
     cleaned_question = re.sub(r"in choreo", "", question, flags=re.IGNORECASE)
     results = get_docs(cleaned_question)
+    logging.INFO(results)
     chat_prompt = f"User's Question: {cleaned_question}\n\nInformation from docs:\n"
     for result in results:
         chat_prompt += f"Document: {{content: {result.page_content}, metadata:{result.metadata}}}\n"
@@ -63,6 +63,7 @@ def bulk_response(question):
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": message}
     ])
+    logging.INFO(response)
     return response.content
 
 
@@ -72,4 +73,4 @@ def chat(question: str = Body(..., embed=True)):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=5003)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
